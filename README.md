@@ -70,6 +70,7 @@ account ：登录的微信ID，或者其它唯一标识
   }
 }
 ```
+
  account ：登录的微信ID，或者其它唯一标识
 
  toUserName ： 发给谁，必须为目标微信ID或者群ID
@@ -80,7 +81,7 @@ account ：登录的微信ID，或者其它唯一标识
  
  url：链接打开的url
  
-	 cdnthumburl
+    cdnthumburl
 	 
 	 cdnthumbmd5
 	 
@@ -167,7 +168,7 @@ groupId：群微信ID
 wxId： 邀请进群的用户的微信ID
 
 
-### 重连，长连接断线重连后先发这个消息。我们会把已经登录的微信和这个长连接绑定
+### 重连
 ```json
 {
   "code": 100,
@@ -175,9 +176,25 @@ wxId： 邀请进群的用户的微信ID
   "data": {}
 }
 ```
+长连接断线重连后先发这个消息。我们会把已经登录的微信和这个长连接绑定
+
 参数 无，基本消息格式就行
 
 ### code ：109 发送图片接口
+图片精base64 编码发送
+node 示例代码
+```ts
+const piBuff = fs.readFileSync('./test.jpg')
+const sendPic = {
+  "code": 109,
+  "authKey": "XXXXXX",
+  "data": {
+    "account":"juxiaoxiong",
+    "imgBuff": new Buffer(piBuff).toString('base64'),
+    "toUserWxId": "qq512436430",
+  }
+}
+```
  account：登录的微信ID，或者其它唯一标
  
  imgBuff：base64的字节字符串
