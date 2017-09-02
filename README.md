@@ -456,3 +456,82 @@ UserName 不是 `wxid_`
 }
 
 ```
+
+### MsgType=1 的返回结果
+#### Personal message
+```json
+{
+    "Status": 3, 
+    "CreateTime": 1504370169, 
+    "NewMsgId": 8608572634287248000, 
+    "ToUserName": "wxid_zbym1zg75qbm22", 
+    "MsgType": 1, 
+    "ImgStatus": 1, 
+    "MsgId": 1074440098, 
+    "MsgSource": "", 
+    "PushContent": "管理员 : VB", 
+    "Content": "VB", 
+    "FromUserName": "qq512436430", 
+    "account": "rui"
+}
+```
+
+#### Room message
+```json
+{
+    "Status": 3, 
+    "CreateTime": 1504370187, 
+    "NewMsgId": 7158346053277359000, 
+    "ToUserName": "wxid_zbym1zg75qbm22", 
+    "MsgType": 1, 
+    "ImgStatus": 1, 
+    "MsgId": 1648153419, 
+    "MsgSource": "<msgsource>
+	<silence>0</silence>
+	<membercount>3</membercount>
+</msgsource>
+", 
+    "PushContent": "管理员 : jjjq", 
+    "Content": "qq512436430:
+jjjq", 
+    "FromUserName": "8015951104@chatroom", 
+    "account": "rui"
+}
+```
+
+### MsgType=10000 Result
+#### Room topic change
+```json
+{
+    "Status": 4, 
+    "CreateTime": 1504370404, 
+    "NewMsgId": 2133992112639907600, 
+    "ToUserName": "wxid_zbym1zg75qbm22", 
+    "MsgType": 10000, 
+    "ImgStatus": 1, 
+    "MsgId": 1648153421, 
+    "MsgSource": "", 
+    "PushContent": "", 
+    "Content": "\"管理员\"修改群名为“新的群”", 
+    "FromUserName": "8015951104@chatroom", 
+    "account": "rui"
+}
+```
+
+#### Room join
+```json
+{
+    "Status": 4, 
+    "CreateTime": 1504370187, 
+    "NewMsgId": 7176326471908948000, 
+    "ToUserName": "wxid_zbym1zg75qbm22", 
+    "MsgType": 10000, 
+    "ImgStatus": 1, 
+    "MsgId": 1648153418, 
+    "MsgSource": "", 
+    "PushContent": "", 
+    "Content": "\"管理员\"邀请你和\"柚子\"加入了群聊", 
+    "FromUserName": "8015951104@chatroom", 
+    "account": "rui"
+}
+```
