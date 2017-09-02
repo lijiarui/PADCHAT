@@ -1,4 +1,4 @@
-地址： api.botorange.com:11001/ws
+地址： api.batorange.com:11001/ws
 ## Request
 请求Json格式
 ```
