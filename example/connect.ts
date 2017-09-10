@@ -2,7 +2,7 @@ const WebSocket = require('ws')
 const fs = require('fs')
 const authKey = ''
 const account = ''
-const wsUrl = 'ws://batorange.com:11001/ws' 
+const wsUrl = 'ws://api.batorange.com:11001/ws' 
 
 const reconnect = {
   'code': 100,
