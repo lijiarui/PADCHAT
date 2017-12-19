@@ -1,26 +1,79 @@
 # PADCHAT
 padchat 提供非web的微信接口解决方案，需要authKey 请加微信联系 `mengjunjun001`
 
-使用websocket发送请求，即可完成相关功能
+使用websocket发送请求，即可完成相关功能。
+
+可直接使用`example/wx.js`文件，已经对接口进行了一定封装，跳过封装websocket访问的步骤。
+
 ## API
 
 API 概述如下
 
-| 接口               | code |
-| -----------       | ---- |
-| 建立初始连接        | 100  |
-| 用户登录            | 101  |
-| 退出登录            | 102  |
-| 发送文字信息         | 103  |
-| 发送APP或者连接信息   | 104  |
-| 从群中踢出用户       | 105  |
-| 获取好友信息和群信息  | 106  |
-| 接受好友请求         | 107  |
-| 邀请人入群           | 108  |
-| 发送图片            | 109  |
-| 批量建群            | 110  |
-| 发送好友请求         | 111  |
-| 获取好友或者群二维码  | 112  |
+**接口** | **code** | **备注**
+---|------|-
+**登陆管理** | | 兼容旧api code
+连接认证 | connect | 100
+扫码登陆 | login | 101
+注销登录 | logout | 102
+获取登陆设备参数 | getDeviceInfo |
+**用户管理** |
+获取用户信息 | getContact | 106
+搜索用户 | searchContact |
+通过好友请求 | acceptUser | 107
+添加好友 | addContact | 111
+打招呼 | sayHello |
+删除好友 | deleteContact |
+设置好友备注 | setRemark |
+同步通讯录 | syncContact |
+【未实现接口】获取好友、群二维码 |
+**群管理** |
+创建群 | createRoom | 110
+获取群成员 | getRoomMembers |
+【未实现接口】修改群名称 |
+添加群成员 | addRoomMember |
+邀请好友进群 | inviteRoomMember | 108
+删除群成员 | deleteRoomMember | 105
+退出群 | quitRoom |
+**发送消息** |
+发送文本消息 | sendMsg | 103
+发送App消息 | sendAppMsg | 104
+发送图片消息 | sendImage | 109
+发送名片 | shareCard |
+【未实现接口】上传文件 |
+**获取图片、文件** |
+获取消息图片原图 | getMsgImage |
+【未实现接口】获取文件 |
+**朋友圈操作** |
+发朋友圈 |
+朋友圈上传图片 |
+获取好友朋友圈信息 |
+获取朋友圈动态 |
+获取朋友圈消息详情 |
+操作朋友圈（删除、删除评论、取消赞） |
+评论朋友圈 |
+**收藏操作** |
+同步收藏消息 |
+添加收藏 |
+获取收藏消息详情 |
+删除收藏 |
+**标签管理** |
+添加标签 |
+删除标签 |
+获取所有标签 |
+设置用户标签 |
+**接收转账及红包**  |
+查看转账消息 |
+接受转账 |
+接收红包 |
+领取红包 |
+查看红包信息 |
+**公众号操作** |
+获取公众号gh |
+获取公众号信息 |
+操作公众号菜单 |
+获取公众号授权信息 |
+获取公众号授权页面 |
+
 
 ## 请求结构
 
@@ -29,48 +82,68 @@ API 概述如下
 
 ### 2. 通信协议
 WebSocket 通信协议, 
-* [websockets 官方github](https://github.com/websockets)     
+* [websockets 官方github](https://github.com/websockets)
 * [NodeJs 参考](https://github.com/websockets/ws)
 
-### 3. API请求结构
-| **名称** | **描述**         | **备注**                     |
-| ------- | ------------     | -------------------------- |
-| API入口  | API调用的入口     | api.batorange.com:11001/ws |
-| 公共参数  | 每个接口都包含的通用参数 | 详见 [公共参数](##PUBLIC_PARAMETER) 页面        |
-| 指令名称  | code         | 完整的指令请参见 [API概览](#API)    |
-| 指令参数  | 每个特定的指令需要的参数 | 详见每个指令的接口文档                |
+#### 连接授权
+连接websocket后，需要在10秒内进行授权操作，如果未成功授权，则连接会被服务端关闭。
 
-## PUBLIC_PARAMETER
-下面是公共参数部分 
+#### API请求操作结果（识别异步请求）
+由于websocket自身是异步操作，未原生支持识别请求返回的结果（即向服务端发送一个请求，服务端返回执行结果，客户端却无法确认是自己这个主动请求的结果，或者是另一个请求的返回结果，或者是服务端主动推送）。因此本服务增加了一个字段`cmdId`，用于标识请求，并在返回操作结果时一块返回。
+如果希望发送api请求后，能识别服务端执行本次请求后的返回结果，可提供`cmdId`字段，请一定提供随机值，建议使用`uuid`模块随机生成。当收到服务端推送过来的数据中包含`cmdId`字段时，即可确认为之前请求对应的执行结果。
+建议结合使用`Promise`+`Event.once(cmdId)`来实现。
+
+> `example/wx.js`已经对此进行了封装，可直接使用。
+
+#### 数据规则约定
+
+API请求的数据结构中，所有字段名称为`小驼峰`写法。
+推送回来的数据结构中，第一级字段名称为`小驼峰`写法，`data`字段下所有字段名称为`大驼峰`写法。
+
+### 3. API请求结构
+
+API请求是以websocket协议发送的json数据，以下为json数据的字段
 
 | **名称**   | **类型** | **描述**             | **必选** |
 | --------- | ------   | ----------------    | ------ |
-| code      | number   | [API 类别](#API)             | 是      |
-| authKey   | String   | 授权码，需要购买       | 是      |
+| code      | String/Number   | API命令码，见[API概览](#API)             | 是      |
+| cmdId      | String   | 指令id。用于识别API异步操作结果，操作结果会增加此属性推送回来  |  否      |
+| authKey      | String    | 授权码，需要购买。仅连接认证时需要             |   否    |
 | data      | Object   | 取决于是不同的API要求  |  否      |
 
-一个典型的JSON请求如下，用来发送登陆请求
-```json
-{
-    "code": 101,
-    "authKey": "authKey",
-    "data": {
-        "account":"test"
-    }
-}
-```
-其中`authKey` 和 `code` 通用参数，`data` 详细见相关API说明.
 
-## 返回值
+## 推送/返回数据
 
 通用返回值, 推送返回的消息，包含且不仅包含下面的字段。
+
+| **名称**   | **类型**      | **描述**                  | **必选** |
+| --------- | ------        | ----------------------- | ------ |
+| cmdId   | String | 指令id，用于识别API异步操作结果。仅返回API请求执行结果，且请求API时提供了cmdId时，存在               | 否     |
+| msg     | String        | 提示信息                    | Yes    |
+| event   | String        | [消息事件类型](#推送数据类型)                    | Yes    |
+| data   | Object/Array        | 附加数据。其下所有字段名全为大驼峰形式                    | Yes    |
+
+### 推送数据类型
+
+**event** | **含义** | **备注**
+------|---|---
+cmdRet | 指令返回结果（API请求结果） | 如果请求时提供了`cmdId`，则返回的JSON中也包含此`cmdId`字段
+push | 推送信息（系统、好友消息等） | 返回的`data`字段为Array类型，需要自行拆分
+qrcode | 登陆二维码 |
+scan | 扫码登陆状态 |
+login | **事件通知** 登陆完成 | `data`字段无附加数据
+loaded | **事件通知** 通讯录同步完毕 | `data`字段无附加数据
+logout | **事件通知** 注销登录 | `data`字段无附加数据
+error | 错误 | 错误提示内容见`msg`字段
+
+### data字段
+
 
 | **名称**   | **类型**      | **描述**                  | **必选** |
 | --------- | ------        | ----------------------- | ------ |
 | MsgType   | Int           | 返回结果的类别码，详见[MsgType](#MsgType)。 | Yes    |
 | Content   | String/Object | 返回内容               | No     |
 | MsgId     | String        | 消息ID                    | Yes    |
-| account   | String        | account                    | Yes    |
 
 ### MsgType
 
@@ -94,6 +167,61 @@ WebSocket 通信协议,
 | 3000  | 群邀请          | 
 | 10000 | 微信群信息变更通知，多为群名修改，进群，离群信息，不包含群内聊天信息，一般为微信服务器发过来，直接转发出去  | 
 | 10002 | 撤回消息        | 
+
+## TODO:以下待编辑
+
+### data 数据
+
+发送消息
+* toUserName  用户/群id（群id包含@chatroom部分）
+* content  文本内容
+    > 文本消息内容
+    App消息xml结构体
+    名片自定义标题
+    添加好友时，为验证信息
+* image 图片base64编码
+* atList ["wxid1","wxid2"]  要at的用户 数组
+
+群及好友管理
+* roomName 群名称
+* userIds ["wxid1","wxid2"]  用户id列表
+    > 添加群成员
+    创建群
+* groupId 要操作的群id
+* remark 备注名称
+* userId 要操作的用户id
+   > 主动添加好友 时也可以直接使用userId添加
+    好友验证
+* stranger 或userId V1码，相对加密的userId
+   > 接受好友请求(仅限stranger字段)
+    主动添加好友(可使用userId)
+* ticket V2码，好友请求中的ticket
+* type 添加好友来源
+    > 1搜索QQ号；2邮箱搜索；3微信号；
+    4来自QQ好友；8通过群聊； 15手机号
+    默认为 微信号
+* verifyMsg 或 content 验证信息
+    > 主动添加好友
+
+其他
+* rawMsgData 原始MsgData字符串
+    > 接收红包
+    获取原始图片（可删除掉json中的data字段，即缩略图base64）
+* 登陆设备参数，不同的号要用不同的参数配置。
+  * deviceName
+  * deviceUuid
+  * deviceWifiName
+  * deviceWifiMac
+
+| **名称**   | **类型**      | **描述**                  | **必选** |
+| --------- | ------        | ----------------------- | ------ |
+| deviceName      | String   | 设备名称，如:`xxxx 的 ipad`  |  否      |
+| deviceUuid      | String   | 设备UUID，如:`AD0A82EE-98B6-498B-8CB5-E4CB664D7727`  |  否      |
+| deviceWifiName      | String   | 指定WIFI名，如:`WorkWifi`  |  否      |
+| deviceWifiMac      | String   | 指定WIFI MAC地址，如:`8E:53:A8:B3:4C:EB`  |  否      |
+其中`device`系列参数用于在用户登录时指定设备参数，未指定则服务端会随机生成。建议同一个账号长期使用同一套设备参数，短时间内多次使用不同设备参数登录，可能导致被tx服务器判断为风险环境，导致账号异常。多个账号也不用使用同一套设备参数，否则同样可能被判断为异常登录。此参数在首次登录后，可使用`获取登陆设备参数 API`来获取服务器随机生成的设备参数，自行进行保存，以后可以在登录时附加此套参数。
+
+
 
 ## 具体接口说明
 
@@ -356,7 +484,7 @@ account ：登录的微信ID，或者其它唯一标识
 ```json
 {
     "code": 106,
-	"msgId":0,
+    "msgId":0,
     "authKey": "XXXXX",
     "data": {
         "account":"juxiaoxiong",
@@ -372,7 +500,7 @@ wxIds：用户的微信Id或者群Id，如需获取多个用户信息，多个�
 ```json
 {
     "code": 107,
-	"msgId":0,
+    "msgId":0,
     "authKey": "XXXXX",
     "data": {
         "account":"juxiaoxiong",
@@ -393,7 +521,7 @@ wxIds：用户的微信Id或者群Id，如需获取多个用户信息，多个�
 ```json
 {
     "code": 108,
-	"msgId":0,
+    "msgId":0,
     "authKey": "XXXXXX",
     "data": {
         "account":"juxiaoxiong",

@@ -11,6 +11,7 @@ const wx = new WX(server)
 wx
   .on('open', async () => {
     let ret
+    //连接后先请求授权
     ret = await wx.auth(key)
       .catch(e => {
         console.error('授权请求失败！', e.message)

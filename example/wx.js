@@ -16,7 +16,7 @@ class Wx extends EventEmitter {
 
   /**
    * Creates an instance of Wx.
-   * @param {any} [address] 远程服务器地址,如ws://127.0.0.1:8080/ws
+   * @param {String} [address] 远程服务器地址,如ws://127.0.0.1:8080/ws
    * @memberof Wx
    */
   constructor(address = WxServer) {
@@ -134,9 +134,11 @@ class Wx extends EventEmitter {
   /**
    *  发送指令，并返回执行结果
    *
-   * @param {any} command 指令
-   * @param {any} data 指令附加数据
-   * @returns
+   * 需要注意捕捉catch，请求结果超时或发送失败
+   *
+   * @param {String} command 指令
+   * @param {String | Object | Null} data 指令附加数据
+   * @returns {Promise} 返回请求结果json对象。
    * @memberof Wx
    */
 
@@ -158,8 +160,10 @@ class Wx extends EventEmitter {
    *
    * 需要注意：连接ws后，需要在10秒内验证授权，否则服务器端会关闭连接。
    *
-   * @param {any} key 授权key
-   * @returns
+   * 需要注意捕捉catch
+   *
+   * @param {String} key 授权key
+   * @returns {Promise} 返回授权结果Boolean值
    * @memberof Wx
    */
 
