@@ -3,7 +3,14 @@
 const WX = require('./wx')
 const fs = require('fs')
 
-const key = ''
+const args = process.argv.splice(2)
+
+let key = ''
+
+if (args.length > 0) {
+  // 可附加参数授权key
+  key = args[0]
+}
 
 const wx = new WX()
 
