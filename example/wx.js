@@ -22,7 +22,7 @@ class Wx extends EventEmitter {
   constructor(address = WxServer) {
     super()
     this._event = new EventEmitter()
-    this._timeout = 5000 // 向ws服务器提交指令后，返回结果的超时时间，单位毫秒
+    this._timeout = 10000 // 向ws服务器提交指令后，返回结果的超时时间，单位毫秒
     this.ws = new ws(address)
     this._On()
   }
@@ -109,7 +109,7 @@ class Wx extends EventEmitter {
   }
 
   async _asyncSend(data, timeout = this._timeout) {
-    const tmp = UUID.v1()
+    // const tmp = `指令 [${UUID.v1()}] ${data.code}`
     // console.time(tmp)
     return await new Promise((res, rej) => {
       let ok = false
