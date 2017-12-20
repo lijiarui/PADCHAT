@@ -110,19 +110,19 @@ class Wx extends EventEmitter {
 
   async _asyncSend(data, timeout = this._timeout) {
     const tmp = UUID.v1()
-    console.time(tmp)
+    // console.time(tmp)
     return await new Promise((res, rej) => {
       let ok = false
       setTimeout(() => {
         if (ok) { return }
         ok = true
-        console.timeEnd(tmp)
+        // console.timeEnd(tmp)
         rej(new Error('请求超时！'))
       }, timeout);
       this._send(data, (err, ret) => {
         if (ok) { return }
         ok = true
-        console.timeEnd(tmp)
+        // console.timeEnd(tmp)
         if (err) {
           rej(err)
         } else {
