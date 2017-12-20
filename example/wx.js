@@ -4,7 +4,7 @@ const ws = require('ws')
 const UUID = require('uuid')
 const EventEmitter = require('events');
 
-const WxServer = 'ws://127.0.0.1:8080/ws'
+const WxServer = 'ws://api.batorange.com/ws'
 
 /**
  * 微信ipad协议访问类
@@ -72,6 +72,7 @@ class Wx extends EventEmitter {
       case 'qrcode': // 微信扫码登陆，推送二维码
       case 'scan': // 微信账号扫码事件
       case 'login': // 微信账号登陆成功
+      case 'reconnect': // 重连成功（账号已经登陆，自行判断是否需要同步通讯录）
       case 'loaded': // 通讯录载入完毕
       case 'logout': // 微信账号退出
       case 'sns': // 朋友圈事件：新评论

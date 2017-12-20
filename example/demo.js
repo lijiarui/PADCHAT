@@ -3,10 +3,9 @@
 const WX = require('./wx')
 const fs = require('fs')
 
-const server = 'ws://127.0.0.1:8080/ws'
 const key = ''
 
-const wx = new WX(server)
+const wx = new WX()
 
 wx
   .on('open', async () => {
@@ -82,6 +81,21 @@ wx
           console.warn('scan事件返回提示信息：', msg)
         }
         break;
+    }
+  })
+  .on('reconnect', async (data, msg) => {
+    // 当触发此事件时，说明本次连接前账号已经登陆，在此事件中可以决定是否请求同步通讯录
+    let ret
+    console.log('账号重连成功！')
+    ret = await wx.send('syncContact')
+      .catch(e => {
+        console.error('同步通讯录错误：', e.message)
+      })
+
+    if (!ret || !ret.success) {
+      console.warn('请求同步通讯录失败！ json:', ret)
+    } else {
+      console.log('请求同步通讯录成功！')
     }
   })
   .on('login', (data, msg) => {
