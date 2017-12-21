@@ -139,8 +139,23 @@ wx
   .on('logout', (data, msg) => {
     console.log('微信账号已退出！', msg)
   })
-  .on('loaded', (data, msg) => {
+  .on('loaded', async (data, msg) => {
     console.log('通讯录同步完毕！', msg)
+
+    const ret = await wx.send('sendMsg', {
+      toUserName: 'filehelper',
+      content: 'Hi! 你已经登陆了！'
+    })
+      .catch(e => {
+        console.error('发送信息错误：', e.message)
+      })
+
+    if (!ret || !ret.success) {
+      console.warn('发送信息失败！ json:', ret)
+    } else {
+      console.log('发送信息成功！')
+    }
+
   })
   .on('sns', (data, msg) => {
     console.log('收到朋友圈事件！请查看朋友圈新消息哦！', msg)
