@@ -12,6 +12,25 @@ if (args.length > 0) {
   key = args[0]
 }
 
+const deviceInfo = {
+  deviceName: '',
+  deviceUuid: '',
+  deviceWifiName: '',
+  deviceWifiMac: '',
+}
+
+try {
+  const tmpBuf = fs.readFileSync('./config.json')
+  const data = JSON.parse(String(tmpBuf))
+  deviceInfo.deviceName = data.deviceName
+  deviceInfo.deviceUuid = data.deviceUuid
+  deviceInfo.deviceWifiName = data.deviceWifiName
+  deviceInfo.deviceWifiMac = data.deviceWifiMac
+  console.log('载入设备参数: ', deviceInfo)
+} catch (e) {
+  console.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！')
+}
+
 const wx = new WX()
 
 wx
@@ -28,7 +47,9 @@ wx
     }
     console.log('授权请求成功!')
 
-    ret = await wx.send('login')
+    // 非首次登录时最好使用以前成功登录时使用的设备参数，
+    // 否则可能会被tx服务器怀疑账号被盗，导致手机端被登出
+    ret = await wx.send('login', deviceInfo)
       .catch(e => {
         console.error('登录请求失败！', e.message)
       })
@@ -47,6 +68,13 @@ wx
       return
     }
     console.log('获取设备参数成功, json: ', ret)
+    // NOTE: 这里将设备参数保存到本地，以后再次登录此账号时提供相同参数
+    deviceInfo.deviceName = ret.data.DeviceName
+    deviceInfo.deviceUuid = ret.data.DeviceUuid
+    deviceInfo.deviceWifiName = ret.data.DeviceWifiName
+    deviceInfo.deviceWifiMac = ret.data.DeviceWifiMac
+    fs.writeFileSync('./config.json', JSON.stringify(deviceInfo))
+    console.log('设备参数已写入到 ./config.json文件')
   })
   .on('qrcode', data => {
     if (!data.QrCode) {
