@@ -14,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "log4js": "^2.4.1",
     "uuid": "^3.1.0",
     "ws": "^3.3.2"
   },
@@ -22,6 +23,7 @@
   },
   "homepage": "https://github.com/lijiarui/websocket-api#readme",
   "devDependencies": {
+    "@types/log4js": "^2.3.5",
     "@types/uuid": "^3.4.3",
     "@types/ws": "^3.2.1"
   }

@@ -1,5 +1,6 @@
 'use strict'
 
+const log4js = require('log4js')
 const WX = require('./wx')
 const fs = require('fs')
 
@@ -11,6 +12,30 @@ if (args.length > 0) {
   // 可附加参数授权key
   key = args[0]
 }
+
+/**
+* 创建日志目录
+*/
+
+try {
+  require('fs').mkdirSync('./logs')
+} catch (e) {
+  if (e.code !== 'EEXIST') {
+    console.error('Could not set up log directory, error was: ', e)
+    process.exit(1)
+  }
+}
+
+try {
+  log4js.configure('./log4js.json')
+} catch (e) {
+  console.error('载入log4js日志输出配置错误: ', e)
+  process.exit(1);
+}
+
+const logger = log4js.getLogger('app')
+
+logger.info('demo start!')
 
 const deviceInfo = {
   deviceName: '',
@@ -26,9 +51,9 @@ try {
   deviceInfo.deviceUuid = data.deviceUuid
   deviceInfo.deviceWifiName = data.deviceWifiName
   deviceInfo.deviceWifiMac = data.deviceWifiMac
-  console.log('载入设备参数: ', deviceInfo)
+  logger.info('载入设备参数: ', deviceInfo)
 } catch (e) {
-  console.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！')
+  logger.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！')
 }
 
 const wx = new WX()
@@ -39,81 +64,81 @@ wx
     //连接后先请求授权
     ret = await wx.auth(key)
       .catch(e => {
-        console.error('授权请求失败！', e.message)
+        logger.error('授权请求失败！', e.message)
       })
     if (!ret) {
-      console.warn('授权请求未成功！')
+      logger.warn('授权请求未成功！', ret.msg)
       return
     }
-    console.log('授权请求成功!')
+    logger.info('授权请求成功!')
 
     // 非首次登录时最好使用以前成功登录时使用的设备参数，
     // 否则可能会被tx服务器怀疑账号被盗，导致手机端被登出
     ret = await wx.send('login', deviceInfo)
       .catch(e => {
-        console.error('登录请求失败！', e.message)
+        logger.error('登录请求失败！', e.message)
       })
     if (!ret || !ret.success) {
-      console.warn('请求登录未成功！ json:', ret)
+      logger.warn('请求登录未成功！ json:', ret)
       return
     }
-    console.log('请求登录成功, json: ', ret)
+    logger.info('请求登录成功, json: ', ret)
 
     ret = await wx.send('getDeviceInfo')
       .catch(e => {
-        console.error('获取设备参数失败！', e.message)
+        logger.error('获取设备参数失败！', e.message)
       })
     if (!ret || !ret.success) {
-      console.warn('获取设备参数未成功！ json:', ret)
+      logger.warn('获取设备参数未成功！ json:', ret)
       return
     }
-    console.log('获取设备参数成功, json: ', ret)
+    logger.info('获取设备参数成功, json: ', ret)
     // NOTE: 这里将设备参数保存到本地，以后再次登录此账号时提供相同参数
     deviceInfo.deviceName = ret.data.DeviceName
     deviceInfo.deviceUuid = ret.data.DeviceUuid
     deviceInfo.deviceWifiName = ret.data.DeviceWifiName
     deviceInfo.deviceWifiMac = ret.data.DeviceWifiMac
     fs.writeFileSync('./config.json', JSON.stringify(deviceInfo))
-    console.log('设备参数已写入到 ./config.json文件')
+    logger.info('设备参数已写入到 ./config.json文件')
   })
   .on('qrcode', data => {
     if (!data.QrCode) {
-      console.error('没有在数据中获得登陆二维码！')
+      logger.error('没有在数据中获得登陆二维码！')
       return
     }
     fs.writeFileSync('./qrcode.jpg', Buffer.from(data.QrCode || '', 'base64'))
-    console.log('登陆二维码已经写入到 ./qrcode.jpg，请打开扫码登陆！')
+    logger.info('登陆二维码已经写入到 ./qrcode.jpg，请打开扫码登陆！')
   })
   .on('scan', (data, msg) => {
     switch (data.Status) {
       case 0:
-        console.log('等待扫码...')
+        logger.info('等待扫码...', data)
         break;
       case 1:
-        console.log('已扫码，请在手机端确认登陆...')
+        logger.info('已扫码，请在手机端确认登陆...', data)
         break;
       case 2:
         switch (data.SubStatus) {
           case 0:
-            console.log('扫码成功！登陆成功！')
+            logger.info('扫码成功！登陆成功！', data)
             break;
           case 1:
-            console.log('扫码成功！登陆失败！')
+            logger.info('扫码成功！登陆失败！', data)
             break;
           default:
-            console.log('扫码成功！子状态码:', data.SubStatus)
+            logger.info('扫码成功！未知状态码！', data)
             break;
         }
         break;
       case 3:
-        console.log('二维码已过期！')
+        logger.info('二维码已过期！', data)
         break;
       case 4:
-        console.log('手机端已取消登陆！')
+        logger.info('手机端已取消登陆！', data)
         break;
       default:
         if (msg) {
-          console.warn('scan事件返回提示信息：', msg)
+          logger.warn('scan事件返回提示信息：', msg)
         }
         break;
     }
@@ -121,44 +146,44 @@ wx
   .on('reconnect', async (data, msg) => {
     // 当触发此事件时，说明本次连接前账号已经登陆，在此事件中可以决定是否请求同步通讯录
     let ret
-    console.log('账号重连成功！')
+    logger.info('账号重连成功！')
     ret = await wx.send('syncContact')
       .catch(e => {
-        console.error('同步通讯录错误：', e.message)
+        logger.error('同步通讯录错误：', e.message)
       })
 
     if (!ret || !ret.success) {
-      console.warn('请求同步通讯录失败！ json:', ret)
+      logger.warn('请求同步通讯录失败！ json:', ret)
     } else {
-      console.log('请求同步通讯录成功！')
+      logger.info('请求同步通讯录成功！')
     }
   })
   .on('login', (data, msg) => {
-    console.log('微信账号登陆成功！', msg)
+    logger.info('微信账号登陆成功！', msg)
   })
   .on('logout', (data, msg) => {
-    console.log('微信账号已退出！', msg)
+    logger.info('微信账号已退出！', msg)
   })
   .on('loaded', async (data, msg) => {
-    console.log('通讯录同步完毕！', msg)
+    logger.info('通讯录同步完毕！', msg)
 
     const ret = await wx.send('sendMsg', {
       toUserName: 'filehelper',
       content: 'Hi! 你已经登陆了！'
     })
       .catch(e => {
-        console.error('发送信息错误：', e.message)
+        logger.error('发送信息错误：', e.message)
       })
 
     if (!ret || !ret.success) {
-      console.warn('发送信息失败！ json:', ret)
+      logger.warn('发送信息失败！ json:', ret)
     } else {
-      console.log('发送信息成功！')
+      logger.info('发送信息成功！')
     }
 
   })
   .on('sns', (data, msg) => {
-    console.log('收到朋友圈事件！请查看朋友圈新消息哦！', msg)
+    logger.info('收到朋友圈事件！请查看朋友圈新消息哦！', msg)
   })
   .on('push', data => {
     // 消息类型 data.MsgType
@@ -189,18 +214,35 @@ wx
     // 各类复杂消息，data.Content中是xml格式的文本内容，需要自行从中提取各类数据。（如好友请求）
     switch (data.MsgType) {
       case 2:
-        console.log('收到推送联系人：', data)
+        logger.info('收到推送联系人：', data)
+        break
+
+      case 1:
+        logger.info('收到推送文本消息：', data)
+        wx.send('sendMsg', {
+          toUserName: data.FromUser,
+          content: '接收到你发送的内容了!\n\n原内容：' + data.Content
+        })
         break
 
       default:
-        console.log('收到推送消息：', data)
+        logger.info('收到推送消息：', data)
         break
     }
   })
   .on('error', e => {
-    console.error('错误事件：', e)
+    logger.error('错误事件：', e)
   })
   .on('other', data => {
     // 可以忽略此事件，正常情况下应该不会触发
-    console.warn('收到异常数据！', data)
+    logger.warn('收到异常数据！', data)
   })
+
+
+process.on('uncaughtException', e => {
+  logger.error('Main', 'uncaughtException:', e)
+})
+
+process.on('unhandledRejection', e => {
+  logger.error('Main', 'unhandledRejection:', e)
+})
