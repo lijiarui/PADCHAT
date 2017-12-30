@@ -13,6 +13,9 @@ if (args.length > 0) {
   key = args[0]
 }
 
+let WxServer = 'ws://api.batorange.com/ws'
+// WxServer = 'ws://127.0.0.1/ws'  //本地调试地址，请忽略
+
 /**
 * 创建日志目录
 */
@@ -56,7 +59,7 @@ try {
   logger.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！')
 }
 
-const wx = new WX()
+const wx = new WX(WxServer)
 
 wx
   .on('open', async () => {
@@ -223,6 +226,12 @@ wx
           toUserName: data.FromUser,
           content: '接收到你发送的内容了!\n\n原内容：' + data.Content
         })
+          .then(ret => {
+            logger.debug('回复信息操作结果：', ret)
+          })
+          .catch(e => {
+            logger.error('回复信息操作错误！', e.message)
+          })
         break
 
       default:
