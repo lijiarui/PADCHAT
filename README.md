@@ -12,11 +12,14 @@ API 概述如下
 
 **接口** | **code** | **备注**
 ---|------|-
-**登陆管理** | | 兼容旧api code
-连接认证 | connect |
-扫码登陆 | login |
+**登陆管理** | | 
+连接认证 | auth | 调用接口身份认证
+建立连接 | connect | 建立与微信服务的连接
+登陆 | login | 登陆账号/恢复连接
 注销登录 | logout |
+断开连接 | disconnect | 仅关闭连接不退出ipad登陆
 获取登陆设备参数 | getDeviceInfo |
+获取二次登陆数据 | getAutoLoginData |
 ~登陆状态~ | ~status~ | 暂无用
 **用户管理** |
 获取用户信息 | getContact |
@@ -242,7 +245,7 @@ data | Object/Array | 返回的附加数据。**需要注意所有子字段名�
 
 #### 连接认证
 
-命令码：`connect`
+命令码：`auth`
 
 说明：与服务器建立websocket连接后，10秒内要进行认证，否则连接会被服务器断开。
 
@@ -264,21 +267,39 @@ authKey | String | 授权码，需要购买。仅连接认证时需要 | 是
 
 **示例**
 
+> 请求：
+
+```JSON
+{
+  "code":"auth",
+  "authKey":"0C3E8EA5-XXXX-XXXX-XXXX-A43F8C1B0CFD",
+  "cmdId":"36a1d2a0-f0f8-11e7-b047-075fc026a5b1"
+}
+```
+
+> 返回：
+
+```JSON
+{
+  "cmdId":"36a1d2a0-f0f8-11e7-b047-075fc026a5b1",
+  "success":true,
+  "msg":"认证成功"
+}
+```
 
 
+#### 建立连接
 
-#### 扫码登陆
+命令码：`connect`
 
-命令码：`login`
-
-说明：提交登陆账号请求，现仅开放扫码登陆模式。如账号已经登陆，则会另外接收到`reconnect`事件，提示账号已经登陆。
+说明：提交登陆账号请。如账号已经登陆，则会另外接收到`reconnect`事件，提示账号已经登陆。
 
 **请求参数**
 
 参数字段 | 字段类型 | 说明 | 必须参数
 -----|------|----|-----
 data.deviceName | String | 环境参数，设备名称 如:`xxxx 的 ipad` | 否
-data.deviceUuid | String | 环境参数，设备UUID 如:`AD0A82EE-98B6-498B-8CB5-E4CB664D7727` | 否
+data.deviceUuid | String | 环境参数，设备UUID 如:`AD0A82EE-XXXX-XXXX-XXXX-E4CB664D7727` | 否
 data.deviceWifiName | String | 环境参数，指定WIFI名 如:`WorkWifi` | 否
 data.deviceWifiMac | String | 环境参数，指定WIFI MAC地址 如:`8E:53:A8:B3:4C:EB` | 否
 
@@ -293,7 +314,113 @@ data.deviceWifiMac | String | 环境参数，指定WIFI MAC地址 如:`8E:53:A8:
 
 **示例**
 
+> 请求：
 
+```JSON
+{
+  "code": "connect",
+  "data": {
+    "deviceName": "XXXXX 的 ipad",
+    "deviceUuid": "D184BD80-XXXX-XXXX-XXXX-84E9066AFA42",
+    "deviceWifiName": "eiXXXXXXg",
+    "deviceWifiMac": "2B:D9:DD:AA:AA:3B"
+  },
+  "cmdId": "36a247d0-f0f8-11e7-b047-075fc026a5b1"
+}
+
+```
+
+> 返回：
+
+```JSON
+{
+  "cmdId": "36a247d0-f0f8-11e7-b047-075fc026a5b1",
+  "success": true,
+  "msg": null,
+  "data": {
+    "Ret": 0,
+    "Msg": "授权验证成功，本技术只做技术交流之用，严禁使用非法用途，发现者立即封停开发者帐户!"
+  },
+  "type": "cmdRet"
+}
+
+```
+
+
+
+#### 登录
+
+命令码：`login`
+
+说明：注销登陆。
+
+**请求参数**
+
+无额外数据字段。
+
+参数字段 | 字段类型 | 说明 | 必须参数
+-----|------|----|-----
+loginType | String | 登陆类型(`qrcode`/`user`/`phone`) | 是
+deviceData | String | 登陆设备参数（加密数据） | 否
+token | String | 自动登陆数据（加密数据） | 否
+~username~ | String | wx帐号密码(`user`方式) | 否
+~password~ | String | wx帐号密码(`user`方式) | 否
+~phone~ | String | 手机号(`phone`方式) | 否
+~code~ | String | 手机验证码(`phone`方式) | 否
+
+> 注意事项：提供`token`参数后，连接时将先尝试使用`token`进行自动登陆，失败后降级使用指定的方式进行登陆。
+> `phone`方式，第一次仅提供`phone`字段，将会向手机发送验证码。第二次访问加上`code`字段，则为使用验证码进行登陆。
+> **暂时不建议使用帐号密码/手机验证码登陆方式，未测试！**
+
+**返回数据**
+
+无额外数据字段。
+
+数据字段 | 字段类型 | 说明 | 固定字段
+-----|------|----|-----
+UserName | String | 当前登陆的微信id | 是
+Uin | Number | 当前登陆的微信编号（唯一） | 是
+
+
+**示例**
+
+> 请求：
+
+```JSON
+{
+  "code": "login",
+  "data": {
+    "loginType": "qrcode",
+    "deviceData": "2KEr4eH/4o54icuJqv3lm0JKVU5jqYJvpG+XSI9Af05E6UKwYHItbNCkJiPc7gInWhwntQ37pW7y+Hw8=",
+    "token": "hDZkDLZzTQwLCgccdHNL3wY3wF6cpnj0Tl5peAZTqAnKLkitkHuRt/nR8aqmb2"
+  },
+  "cmdId": "37179ee0-f0f8-11e7-b047-075fc026a5b1"
+}
+```
+
+示例数据中`deviceData`和`token`字段有删减，以实际为准。
+
+> 返回：
+
+```JSON
+{
+  "cmdId": "37179ee0-f0f8-11e7-b047-075fc026a5b1",
+  "success": true,
+  "msg": "自动登陆成功！",
+  "data": {
+    "Email": "",
+    "External": "0",
+    "Message": "\n\u0010Everything is ok",
+    "NickName": "",
+    "PhoneNumber": "",
+    "Qq": 0,
+    "Status": 0,
+    "Uin": 149800000,
+    "UserName": "wxid_xxxxxxxx"
+  },
+  "type": "cmdRet"
+}
+```
 
 
 #### 注销登录
@@ -301,6 +428,29 @@ data.deviceWifiMac | String | 环境参数，指定WIFI MAC地址 如:`8E:53:A8:
 命令码：`logout`
 
 说明：注销登陆。
+
+**请求参数**
+
+无额外数据字段。
+
+参数字段 | 字段类型 | 说明 | 必须参数
+-----|------|----|-----
+
+**返回数据**
+
+无额外数据字段。
+
+数据字段 | 字段类型 | 说明 | 固定字段
+-----|------|----|-----
+
+
+**示例**
+
+#### 断开连接
+
+命令码：`disconnect`
+
+说明：仅断开连接，而不退出ipad登陆状态。这样下次仍可使用自动登陆接口免验证登陆。
 
 **请求参数**
 
@@ -328,8 +478,8 @@ data.deviceWifiMac | String | 环境参数，指定WIFI MAC地址 如:`8E:53:A8:
 
 说明：登陆时，服务端会随机生成设备参数。此指令会获取服务端的登陆设备参数，可自行保存，在登陆时附加此套设备参数。
 
-> 建议同一个账号长期使用同一套设备参数，短时间内多次使用不同设备参数登录，可能导致被tx服务器判断为风险环境，导致账号异常。
-多个账号也不用使用同一套设备参数，否则同样可能被判断为异常登录。
+> **强烈建议**同一个账号长期使用同一套设备参数，短时间内多次使用不同设备参数登录，容易被tx服务器判断为**风险环境**，导致账号异常。
+多个账号**绝对不要**使用同一套设备参数，否则有**非常高的几率**被判断为异常登录。
 
 **请求参数**
 
@@ -347,10 +497,36 @@ data.DeviceName | String | 环境参数，设备名称 如:`xxxx 的 ipad` | 否
 data.DeviceUuid | String | 环境参数，设备UUID 如:`AD0A82EE-98B6-498B-8CB5-E4CB664D7727` | 否
 data.DeviceWifiName | String | 环境参数，指定WIFI名 如:`WorkWifi` | 否
 data.DeviceWifiMac | String | 环境参数，指定WIFI MAC地址 如:`8E:53:A8:B3:4C:EB` | 否
+data.DeviceData | String | 经过加密的设备信息（62数据） | 否
 
+> 使用`DeviceData`即可忽略其他设备参数，不要账号间混用！
 
 **示例**
 
+#### 获取二次登陆数据
+
+命令码：`getAutoLoginData`
+
+说明：登陆后，获取二次登陆数据。之后可以使用这个数据快速自动登陆，免除手动扫码/验证码登陆。
+
+> 这个数据是有有效期的，建议定期更新一次（如1小时）。如果你和服务器间连接稳定，长时间不更新应该也可以。后续待观察
+
+**请求参数**
+
+无额外数据字段。
+
+参数字段 | 字段类型 | 说明 | 必须参数
+-----|------|----|-----
+
+
+**返回数据**
+
+数据字段 | 字段类型 | 说明 | 固定字段
+-----|------|----|-----
+data.Token | String | 加密的token数据，用于免验证自动登陆（需配合设备参数，建议和`DeviceData`一起使用） | 否
+
+
+**示例**
 
 
 

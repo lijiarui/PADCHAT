@@ -173,7 +173,7 @@ class Wx extends EventEmitter {
       throw new Error('请提供访问授权key！')
     }
     const ret = await this._asyncSend({
-      code: 'connect',
+      code: 'auth',
       authKey: key,
     })
       .catch(e => {

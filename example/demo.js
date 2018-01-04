@@ -47,6 +47,11 @@ const deviceInfo = {
   deviceWifiMac: '',
 }
 
+const autoData = {
+  deviceData: '',
+  token: ''
+}
+
 try {
   const tmpBuf = fs.readFileSync('./config.json')
   const data = JSON.parse(String(tmpBuf))
@@ -54,7 +59,9 @@ try {
   deviceInfo.deviceUuid = data.deviceUuid
   deviceInfo.deviceWifiName = data.deviceWifiName
   deviceInfo.deviceWifiMac = data.deviceWifiMac
-  logger.info('载入设备参数: ', deviceInfo)
+  autoData.deviceData = data.deviceData
+  autoData.token = data.token
+  logger.info('载入设备参数: ', deviceInfo, autoData)
 } catch (e) {
   logger.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！')
 }
@@ -77,32 +84,26 @@ wx
 
     // 非首次登录时最好使用以前成功登录时使用的设备参数，
     // 否则可能会被tx服务器怀疑账号被盗，导致手机端被登出
-    ret = await wx.send('login', deviceInfo)
+    ret = await wx.send('connect', deviceInfo)
       .catch(e => {
-        logger.error('登录请求失败！', e.message)
+        logger.error('连接任务请求失败！', e.message)
       })
     if (!ret || !ret.success) {
-      logger.warn('请求登录未成功！ json:', ret)
+      logger.warn('连接任务失败！ json:', ret)
       return
     }
-    logger.info('请求登录成功, json: ', ret)
+    logger.info('连接任务成功, json: ', ret)
 
-    ret = await wx.send('getDeviceInfo')
+
+    ret = await wx.send('login', Object.assign({ loginType: 'qrcode' }, autoData))
       .catch(e => {
-        logger.error('获取设备参数失败！', e.message)
+        logger.error('登陆请求失败！', e.message)
       })
     if (!ret || !ret.success) {
-      logger.warn('获取设备参数未成功！ json:', ret)
+      logger.warn('登陆失败！ json:', ret)
       return
     }
-    logger.info('获取设备参数成功, json: ', ret)
-    // NOTE: 这里将设备参数保存到本地，以后再次登录此账号时提供相同参数
-    deviceInfo.deviceName = ret.data.DeviceName
-    deviceInfo.deviceUuid = ret.data.DeviceUuid
-    deviceInfo.deviceWifiName = ret.data.DeviceWifiName
-    deviceInfo.deviceWifiMac = ret.data.DeviceWifiMac
-    fs.writeFileSync('./config.json', JSON.stringify(deviceInfo))
-    logger.info('设备参数已写入到 ./config.json文件')
+    logger.info('登陆成功, json: ', ret)
   })
   .on('qrcode', data => {
     if (!data.QrCode) {
@@ -161,8 +162,43 @@ wx
       logger.info('请求同步通讯录成功！')
     }
   })
-  .on('login', (data, msg) => {
+  .on('login', async (data, msg) => {
     logger.info('微信账号登陆成功！', msg)
+
+    let ret = await wx.send('getDeviceInfo')
+      .catch(e => {
+        logger.error('获取设备参数失败！', e.message)
+      })
+    if (!ret || !ret.success) {
+      logger.warn('获取设备参数未成功！ json:', ret)
+      return
+    }
+    logger.info('获取设备参数成功, json: ', ret)
+
+    let tmp = Object.assign({}, ret.data)
+
+    ret = await wx.send('getAutoLoginData')
+      .catch(e => {
+        logger.error('获取自动登陆数据失败！', e.message)
+      })
+    if (!ret || !ret.success) {
+      logger.warn('获取自动登陆数据未成功！ json:', ret)
+      return
+    }
+    logger.info('获取自动登陆数据成功, json: ', ret)
+    Object.assign(tmp, { Token: ret.data.Token })
+    tmp = {
+      deviceName: tmp.DeviceName,
+      deviceUuid: tmp.DeviceUuid,
+      deviceWifiName: tmp.DeviceWifiName,
+      deviceWifiMac: tmp.DeviceWifiMac,
+      deviceData: tmp.DeviceData,
+      token: tmp.Token,
+    }
+
+    // NOTE: 这里将设备参数保存到本地，以后再次登录此账号时提供相同参数
+    fs.writeFileSync('./config.json', JSON.stringify(tmp))
+    logger.info('设备参数已写入到 ./config.json文件')
   })
   .on('logout', (data, msg) => {
     logger.info('微信账号已退出！', msg)
@@ -188,7 +224,7 @@ wx
   .on('sns', (data, msg) => {
     logger.info('收到朋友圈事件！请查看朋友圈新消息哦！', msg)
   })
-  .on('push', data => {
+  .on('push', async data => {
     // 消息类型 data.MsgType
     // 1  微信收到文字消息的推送，一般为微信服务器发过来，我们直接转发给你们的
     // 2  好友信息推送，包含好友，群，公众号信息
@@ -215,6 +251,7 @@ wx
     // --------------------------------
     // 注意，如果是来自微信群的消息，data.Content字段中包含发言人的wxid及其发言内容，需要自行提取
     // 各类复杂消息，data.Content中是xml格式的文本内容，需要自行从中提取各类数据。（如好友请求）
+    let ret
     switch (data.MsgType) {
       case 2:
         logger.info('收到推送联系人：', data)
@@ -222,7 +259,7 @@ wx
 
       case 1:
         logger.info('收到推送文本消息：', data)
-        wx.send('sendMsg', {
+        await wx.send('sendMsg', {
           toUserName: data.FromUser,
           content: '接收到你发送的内容了!\n\n原内容：' + data.Content
         })
@@ -232,6 +269,37 @@ wx
           .catch(e => {
             logger.error('回复信息操作错误！', e.message)
           })
+        if (/^sns$/i.test(data.Content)) {
+          await wx.send('snsTimeline')
+            .then(ret => {
+              logger.debug('执行 snsTimeline 操作结果：', ret)
+            })
+            .catch(e => {
+              logger.error('执行 snsTimeline 操作错误！', e.message)
+            })
+        }
+        if (/^send$/i.test(data.Content)) {
+          await wx.send('snsSendMoment', {
+            content: `现在时间：${new Date()}`
+          })
+            .then(ret => {
+              logger.debug('执行 snsSendMoment 操作结果：', ret)
+            })
+            .catch(e => {
+              logger.error('执行 snsSendMoment 操作错误！', e.message)
+            })
+        }
+        if (/^getObj$/i.test(data.Content)) {
+          await wx.send('snsGetObject', {
+            momentId: '12708669896776683710'
+          })
+            .then(ret => {
+              logger.debug('执行 snsGetObject 操作结果：', ret)
+            })
+            .catch(e => {
+              logger.error('执行 snsGetObject 操作错误！', e.message)
+            })
+        }
         break
 
       default:
