@@ -95,6 +95,10 @@ wx
     }
     logger.info('连接任务成功, json: ', ret)
 
+    if (ret.data.Logined) {
+      logger.info('任务已经登陆，不需要执行login！', ret.data)
+      return
+    }
 
     ret = await wx.send('login', Object.assign({ loginType: 'qrcode' }, autoData))
       .catch(e => {
