@@ -67,7 +67,8 @@ class Wx extends EventEmitter {
         this.emit('error', new Error('捕捉到未包含cmdId的操作返回'))
         break;
       case 'error':
-        this.emit('error', new Error('服务器返回错误提示：' + data.msg))
+        //如果success字段为true，则为不严重的问题
+        this.emit('error', new Error('服务器返回错误提示：' + data.msg), data.success)
         break
       case 'qrcode': // 微信扫码登陆，推送二维码
       case 'scan': // 微信账号扫码事件
@@ -75,6 +76,7 @@ class Wx extends EventEmitter {
       case 'reconnect': // 重连成功（账号已经登陆，自行判断是否需要同步通讯录）
       case 'loaded': // 通讯录载入完毕
       case 'logout': // 微信账号退出
+      case 'disconnect': // 任务断线（帐号不退出）
       case 'sns': // 朋友圈事件：新评论
         this.emit(data.event, data.data || {}, data.msg)
         break

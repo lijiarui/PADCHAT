@@ -67,6 +67,7 @@ try {
 }
 
 const wx = new WX(WxServer)
+logger.info('当前连接接口服务器为：', WxServer)
 
 wx
   .on('open', async () => {
@@ -203,6 +204,9 @@ wx
   .on('logout', (data, msg) => {
     logger.info('微信账号已退出！', msg)
   })
+  .on('disconnect', (data, msg) => {
+    logger.info('任务断线！', msg)
+  })
   .on('loaded', async (data, msg) => {
     logger.info('通讯录同步完毕！', msg)
 
@@ -307,8 +311,8 @@ wx
         break
     }
   })
-  .on('error', e => {
-    logger.error('错误事件：', e)
+  .on('error', (e, isWarn) => {
+    logger.error('错误事件[%s]: ', isWarn ? 'Warn' : 'error', e)
   })
   .on('other', data => {
     // 可以忽略此事件，正常情况下应该不会触发
