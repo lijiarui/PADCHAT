@@ -91,10 +91,11 @@ wx
       })
     if (!ret || !ret.success) {
       logger.warn('连接任务失败！ json:', ret)
-      return
+      throw new Error('连接任务失败！' + ret.msg)
     }
     logger.info('连接任务成功, json: ', ret)
 
+    // NOTE: 如果是恢复连接（重连），则 ret.data 中 { Logined: false, Status: 'init' }
     if (ret.data.Logined) {
       logger.info('任务已经登陆，不需要执行login！', ret.data)
       return
@@ -155,7 +156,14 @@ wx
   .on('reconnect', async (data, msg) => {
     // 当触发此事件时，说明本次连接前账号已经登陆，在此事件中可以决定是否请求同步通讯录
     let ret
-    logger.info('账号重连成功！')
+    logger.info('账号重连成功！', data)
+
+    // NOTE: { Logined: false, Status: 'init' }
+    if (!data.Logined) {
+      logger.info('任务未登陆，不能同步通讯录！', data)
+      return
+    }
+
     ret = await wx.send('syncContact')
       .catch(e => {
         logger.error('同步通讯录错误：', e.message)
@@ -316,7 +324,12 @@ wx
     }
   })
   .on('error', (e, isWarn) => {
-    logger.error('错误事件[%s]: ', isWarn ? 'Warn' : 'error', e)
+    // NOTE: isWarn 为是否仅提示，!isWarn为比较严重的错误
+    if (isWarn) {
+      logger.warn('错误事件: ', e.message)
+    } else {
+      logger.error('错误事件: ', e.message)
+    }
   })
   .on('other', data => {
     // 可以忽略此事件，正常情况下应该不会触发
