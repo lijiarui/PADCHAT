@@ -1,10 +1,10 @@
 {
-  "name": "websocket-api",
-  "version": "2.0.0",
+  "name": "padchat",
+  "version": "3.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node ./example/demo"
+    "start": "node ./demo.js"
   },
   "repository": {
     "type": "git",
@@ -14,9 +14,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "log4js": "^2.4.1",
-    "uuid": "^3.1.0",
-    "ws": "^3.3.2"
+    "log4js": "^2.5.2",
+    "socket.io-client": "^2.0.4",
+    "uuid": "^3.2.1"
   },
   "bugs": {
     "url": "https://github.com/lijiarui/websocket-api/issues"
@@ -24,7 +24,9 @@
   "homepage": "https://github.com/lijiarui/websocket-api#readme",
   "devDependencies": {
     "@types/log4js": "^2.3.5",
+    "@types/socket.io-client": "^1.4.32",
     "@types/uuid": "^3.4.3",
-    "@types/ws": "^3.2.1"
+    "eslint": "^4.16.0",
+    "eslint-config-egg": "^6.0.0"
   }
 }
