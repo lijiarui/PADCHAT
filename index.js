@@ -488,9 +488,6 @@ class Padchat extends EventEmitter {
    * @memberof Padchat
    */
   async getMsgImage(rawMsg) {
-    // TODO: 需要处理rawMsg
-    // msgType:5
-    // subType:3
     return await this.sendCmd('getMsgImage', {
       rawMsg,
     })
@@ -508,7 +505,7 @@ class Padchat extends EventEmitter {
       image = image.toString('base64')
     }
     return await this.sendCmd('snsUpload', {
-      image, // TODO:需要将buffer转换为base64 string
+      image,
     })
   }
 
@@ -891,12 +888,12 @@ function onEvent() {
     })
   })
 
-  io.on('push', data => {
-    if (!Array.isArray(data)) {
-      console.debug('push 信息结构错误:', data)
+  io.on('push', ({ list }) => {
+    if (!Array.isArray(list)) {
+      console.debug('push 信息结构错误:', list)
       return
     }
-    data.forEach(msg => {
+    list.forEach(msg => {
       this.emit('msg', msg)
     })
   })
