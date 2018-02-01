@@ -24,7 +24,7 @@ const loginType = {
   // user: 'user',
 }
 
-const server = 'http://127.0.0.1:7001/wechat'
+const server = 'http://127.0.0.1:7001/user'
 
 class Padchat extends EventEmitter {
   constructor(key, name, opts = {}) {
