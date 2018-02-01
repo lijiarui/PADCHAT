@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "log4js": "^2.5.2",
+    "random-js": "^1.0.8",
     "socket.io-client": "^2.0.4",
     "uuid": "^3.2.1"
   },
