@@ -4,19 +4,6 @@ const EventEmitter = require('events')
 const Io = require('socket.io-client')
 
 
-const userEvents = [
-  'qrcode', // 登陆二维码
-  'scan', // 扫码登陆状态
-  'push', // 推送消息（系统、好友消息、联系人等）数组
-  'login', // 登陆完成
-  'loaded', // 通讯录载入完毕
-  'logout', // 注销登录（账户退出）
-  'close', // 任务断线
-  'warn', // 错误
-  'sns', // 朋友圈事件（朋友圈小圆点）
-  // 'msg', // 已经拆分过的推送消息
-]
-
 const loginType = {
   token: 'token',
   qrcode: 'qrcode',
@@ -26,7 +13,58 @@ const loginType = {
 
 const server = 'http://127.0.0.1:7001/user'
 
+/**
+ * Padchat模块
+ *
+ * 使用socket.io与服务器进行通讯，拥有以下事件:
+ *
+ * qrcode 推送的二维码
+ * scan 扫码状态
+ * push 新信息事件
+ * login 登录
+ * loaded 通讯录载入完毕
+ * logout 注销登录
+ * close 任务实例关闭（要再登录需要重新调用init）
+ * warn 错误信息
+ * sns 朋友圈更新事件
+ *
+ * 另有socket.io的事件，请参阅socket.io文档:
+ * connect
+ * connect
+ * connect_error
+ * connect_timeout
+ * error
+ * disconnect
+ * reconnect
+ * reconnect_attempt
+ * reconnecting
+ * reconnect_error
+ * reconnect_failed
+ * ping
+ *
+ * 所有接口均返回以下结构数据：
+ * {
+ *   success: true, // 执行是否成功
+ *   msg: '', // 错误提示
+ *   data: {} // 返回结果
+ * }
+ *
+ * @class Padchat
+ * @extends {EventEmitter}
+ */
 class Padchat extends EventEmitter {
+  /**
+   * Creates an instance of Padchat.
+   * @param {string} key 授权key
+   * @param {string} name 实例名称
+   * @param {object} [opts={}] 附加参数
+   * url 服务器url
+   * debug 开启调试模式
+   * qurey 连接服务器时附加参数
+   * transports 与服务器通讯模式，不建议更改
+   * sendTimeout 操作的超时时间，单位为秒
+   * @memberof Padchat
+   */
   constructor(key, name, opts = {}) {
     super()
     const {
@@ -880,6 +918,19 @@ function onEvent() {
     'reconnect_failed',
     'ping',
   ]
+
+  const userEvents = [
+    'qrcode', // 登陆二维码
+    'scan', // 扫码登陆状态
+    'login', // 登陆完成
+    'loaded', // 通讯录载入完毕
+    'logout', // 注销登录（账户退出）
+    'close', // 任务断线
+    'warn', // 错误
+    'sns', // 朋友圈事件（朋友圈小圆点）
+    // 'push', // 推送消息（系统、好友消息、联系人等）
+  ]
+
   const events = new Set(socketEvents.concat(userEvents))
 
   events.forEach(event => {
@@ -893,8 +944,9 @@ function onEvent() {
       console.debug('push 信息结构错误:', list)
       return
     }
+    // 从push消息数组中拆分出单条消息
     list.forEach(msg => {
-      this.emit('msg', msg)
+      this.emit('push', msg)
     })
   })
 }
