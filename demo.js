@@ -10,7 +10,7 @@ let key = args[0]
 let name = args[1]
 
 let WxServer = 'http://api.batorange.com/user'
-WxServer = 'http://127.0.0.1:7001/user'  //本地调试地址，请忽略
+// WxServer = 'http://127.0.0.1:7001/user'  //本地调试地址，请忽略
 
 /**
 * 创建日志目录
@@ -62,7 +62,9 @@ try {
   logger.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！')
 }
 
-const wx = new Padchat('test', 'x-1')
+const wx = new Padchat(key, name, {
+  url: WxServer
+})
 logger.info('当前连接接口服务器为：', WxServer)
 
 wx
@@ -72,6 +74,9 @@ wx
   .on('reconnect', () => {
     logger.info('与服务器重连成功！')
   })
+  .on('connect_error', e => {
+    logger.error('与服务器连接错误：', e.message)
+  })
   .on('connect', async () => {
     let ret
     logger.info('连接成功!')
@@ -80,7 +85,7 @@ wx
     // 否则可能会被tx服务器怀疑账号被盗，导致手机端被登出
     ret = await wx.init(deviceInfo)
     if (!ret.success) {
-      logger.error('新建任务失败！', ret.msg)
+      logger.error('新建任务失败！', ret)
       return
     }
     logger.info('新建任务成功, json: ', ret)
@@ -96,7 +101,7 @@ wx
 
     ret = await wx.login('qrcode')
     if (!ret.success) {
-      logger.error('使用qrcode登录模式失败！', ret.msg)
+      logger.error('使用qrcode登录模式失败！', ret)
       return
     }
     logger.info('使用qrcode登录模式！')

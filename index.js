@@ -84,7 +84,7 @@ class Padchat extends EventEmitter {
       transports,
     })
 
-    this.debug = !!debug
+    this.debug = typeof debug === 'function' ? debug : (...args) => { }
     onEvent.call(this)
   }
 
@@ -100,7 +100,7 @@ class Padchat extends EventEmitter {
       'ping',
       'pong',
     ]
-    if (socketEvents.inclues(cmd)) {
+    if (socketEvents.includes(cmd)) {
       throw new Error('Cmd name Error!')
     }
     const sendTimeout = this.sendTimeout
@@ -142,7 +142,6 @@ class Padchat extends EventEmitter {
    */
   async init(data) {
     const { deviceName, deviceUuid, deviceWifiName, deviceWifiMac, deviceData } = data
-
     if (!deviceName || !deviceUuid || !deviceWifiName || !deviceWifiMac) {
       throw new Error('参数错误！')
     }
@@ -182,7 +181,7 @@ class Padchat extends EventEmitter {
    * @memberof Padchat
    */
   async login(type = 'qrcode', data = {}) {
-    if (!loginType.inclues(type)) {
+    if (!loginType[type]) {
       throw new Error('login type error!')
     }
 
@@ -205,6 +204,7 @@ class Padchat extends EventEmitter {
       default:
         break;
     }
+    data.loginType = loginType[type]
     return await this.sendCmd('login', data)
   }
 
@@ -939,9 +939,10 @@ function onEvent() {
     })
   })
 
-  io.on('push', ({ list }) => {
+  io.on('push', data => {
+    const { list } = data
     if (!Array.isArray(list)) {
-      console.debug('push 信息结构错误:', list)
+      console.error('push 信息结构错误:', list)
       return
     }
     // 从push消息数组中拆分出单条消息
