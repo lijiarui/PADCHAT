@@ -316,7 +316,7 @@ class Padchat extends EventEmitter {
   /**
    * 创建群
    *
-   * @param {[String]} userList 用户wxid数组
+   * @param {String[]} userList 用户wxid数组
    * @returns {Promise} 返回Promise<Object>，注意捕捉catch
    * @memberof Padchat
    */
