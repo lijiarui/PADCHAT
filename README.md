@@ -4,6 +4,14 @@ padchat 提供非web的微信接口解决方案，需要authKey 请加微信联�
 
 本项目已经对所有操作进行了封装，请参考demo。
 
+运行demo:
+
+```bash
+# npm start authKey name
+# 两个参数：第一个为授权key，第二个为子账号名称（区别不同账号用，可任意设置）
+npm start key test
+```
+
 与旧版本(websocket协议版本)区别:
 
 * 新版本接口使用socket.io协议通讯
