@@ -6,11 +6,11 @@ const fs = require('fs')
 
 const args = process.argv.splice(2)
 
-let key = args[0]
-let name = args[1]
+const key = args[0]// 授权key
+const name = args[1]// 子账号名，用于区分多个账号，任意设置即可
 
-let WxServer = 'http://api.batorange.com/user'
-// WxServer = 'http://127.0.0.1:7001/user'  //本地调试地址，请忽略
+const WxServer = 'http://52.80.36.166/user'
+// WxServer = 'http://127.0.0.1:7001/user' // 本地调试地址，请忽略
 
 /**
 * 创建日志目录
@@ -45,7 +45,7 @@ const deviceInfo = {
 }
 
 const autoData = {
-  token: ''
+  token: '',
 }
 
 try {
@@ -57,13 +57,13 @@ try {
   deviceInfo.deviceWifiMac = data.deviceWifiMac
   deviceInfo.deviceData = data.deviceData
   autoData.token = data.token
-  logger.info('载入设备参数: ', deviceInfo, autoData)
+  logger.info('载入设备参数: %o \n\n自动登陆数据：%o ', deviceInfo, autoData)
 } catch (e) {
   logger.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！')
 }
 
 const wx = new Padchat(key, name, {
-  url: WxServer
+  url: WxServer,
 })
 logger.info('当前连接接口服务器为：', WxServer)
 
@@ -114,7 +114,7 @@ wx
     fs.writeFileSync('./qrcode.jpg', Buffer.from(data.qrCode || '', 'base64'))
     logger.info('登陆二维码已经写入到 ./qrcode.jpg，请打开扫码登陆！')
   })
-  .on('scan', (data) => {
+  .on('scan', data => {
     switch (data.status) {
       case 0:
         logger.info('等待扫码...', data)
@@ -155,9 +155,9 @@ wx
     }
     logger.info('获取设备参数成功, json: ', ret)
 
-    let tmp = Object.assign({}, ret.data)
+    const tmp = Object.assign({}, ret.data)
 
-    ret = await wx.getAutoLogin()
+    ret = await wx.getAutoLoginData()
     if (!ret.success) {
       logger.warn('获取自动登陆数据未成功！ json:', ret)
       return
@@ -219,10 +219,16 @@ wx
         break
 
       case 1:
-        logger.info('收到来自 %s 的文本消息：', data.fromUser, data.description)
+        if (data.fromUser === 'newsapp') { // 腾讯新闻发的信息太长
+          break
+        }
+        logger.info('收到来自 %s 的文本消息：', data.fromUser, data.description || data.content)
         await wx.sendMsg(data.fromUser, '接收到你发送的内容了!\n\n原内容：' + data.content)
           .then(ret => {
             logger.info('回复信息给%s 结果：', data.fromUser, ret)
+          })
+          .catch(e => {
+            logger.warn('回复信息异常:', e.message)
           })
         break
 

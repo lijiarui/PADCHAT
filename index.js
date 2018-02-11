@@ -11,7 +11,20 @@ const loginType = {
   // user: 'user',
 }
 
-const server = 'http://127.0.0.1:7001/user'
+
+const blacklist = [
+  'weixin', // 腾讯团队
+  'newsapp', // 腾讯新闻
+  'tmessage', //
+  'fmessage', // 朋友推荐
+  'qmessage', // qq离线消息
+  'floatbottle', // 漂流瓶
+  'medianote', // 语音记事本
+  'mphelper', // 公众平台安全助手
+  'weibo', // 微博-未知
+]
+
+const server = 'http://api.batorange.com/user'
 
 /**
  * Padchat模块
@@ -107,6 +120,9 @@ class Padchat extends EventEmitter {
     if (!this.io.connected) {
       throw new Error('Not connected!')
     }
+    if (data.toUserName && blacklist.includes(data.toUserName)) {
+      throw new Error('Can\'t send msg to blacklist user!')
+    }
     if (data.rawMsg) {
       data.rawMsg = clearRawMsg(data.rawMsg)
     }
@@ -117,7 +133,7 @@ class Padchat extends EventEmitter {
     return new Promise((res, rej) => {
       // 如果某操作超过指定时间没有返回结果，则认为是操作超时
       const timeOutHandle = setTimeout(() => {
-        rej(new Error('等待操作结果超时！'))
+        rej(new Error(`等待"${cmd}"操作结果超时！`))
       }, sendTimeout * 1000)
       this.io.emit(cmd, data, (...args) => {
         clearTimeout(timeOutHandle)
@@ -172,7 +188,7 @@ class Padchat extends EventEmitter {
    * @param {Object} data 附加数据
    * 登录类型 | 字段 | 说明
    * ----|----|----
-   * token | token | 使用用任意方式登录成功后，使用 getAutoLogin 接口获得。 此token有过期时间，断开登录状态一段时间后会过期。
+   * token | token | 使用用任意方式登录成功后，使用 getAutoLoginData 接口获得。 此token有过期时间，断开登录状态一段时间后会过期。
    * phone | phone | 手机号
    * phone | code | 手机验证码
    * user | username | 用户名/qq号/手机号
@@ -225,8 +241,8 @@ class Padchat extends EventEmitter {
    * @returns {Promise} 返回Promise<Object>，注意捕捉catch
    * @memberof Padchat
    */
-  async getAutoLogin() {
-    return await this.sendCmd('getAutoLogin', {})
+  async getAutoLoginData() {
+    return await this.sendCmd('getAutoLoginData', {})
   }
 
   /**
@@ -981,4 +997,5 @@ function getRandomDevice() {
 
 Padchat.Padchat = Padchat
 Padchat.getRandomDevice = getRandomDevice
+Padchat.blacklist = blacklist
 module.exports = Padchat
