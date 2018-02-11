@@ -8,3 +8,5 @@ run/
 *.swp
 package-lock.json
 typings
+qrcode.jpg
+config.json
