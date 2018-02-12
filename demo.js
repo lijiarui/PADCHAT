@@ -223,13 +223,15 @@ wx
           break
         }
         logger.info('收到来自 %s 的文本消息：', data.fromUser, data.description || data.content)
-        await wx.sendMsg(data.fromUser, '接收到你发送的内容了!\n\n原内容：' + data.content)
-          .then(ret => {
-            logger.info('回复信息给%s 结果：', data.fromUser, ret)
-          })
-          .catch(e => {
-            logger.warn('回复信息异常:', e.message)
-          })
+        if (/ding/.test(data.content)) {
+          await wx.sendMsg(data.fromUser, 'dong')
+            .then(ret => {
+              logger.info('回复信息给%s 结果：', data.fromUser, ret)
+            })
+            .catch(e => {
+              logger.warn('回复信息异常:', e.message)
+            })
+        }
         break
 
       default:
