@@ -3,14 +3,12 @@
 const EventEmitter = require('events')
 const Io = require('socket.io-client')
 
-
 const loginType = {
   token: 'token',
   qrcode: 'qrcode',
   // phone: 'phone',
   // user: 'user',
 }
-
 
 const blacklist = [
   'weixin', // 腾讯团队
@@ -97,10 +95,9 @@ class Padchat extends EventEmitter {
       transports,
     })
 
-    this.debug = typeof debug === 'function' ? debug : (...args) => { }
+    this.debug = typeof debug === 'function' ? debug : () => { }
     onEvent.call(this)
   }
-
 
   async sendCmd(cmd, data = {}, cb) {
     const socketEvents = [
@@ -123,8 +120,8 @@ class Padchat extends EventEmitter {
     if (data.toUserName && blacklist.includes(data.toUserName)) {
       throw new Error('Can\'t send msg to blacklist user!')
     }
-    if (data.rawMsg) {
-      data.rawMsg = clearRawMsg(data.rawMsg)
+    if (data.rawMsgData) {
+      data.rawMsgData = clearRawMsg(data.rawMsgData)
     }
     if (cb && typeof cb === 'function') {
       this.io.emit(cmd, data, cb)
@@ -157,13 +154,22 @@ class Padchat extends EventEmitter {
    * @memberof Padchat
    */
   async init(data) {
-    const { deviceName, deviceUuid, deviceWifiName, deviceWifiMac, deviceData } = data
+    const {
+      deviceName,
+      deviceUuid,
+      deviceWifiName,
+      deviceWifiMac,
+      deviceData,
+    } = data
     if (!deviceName || !deviceUuid || !deviceWifiName || !deviceWifiMac) {
       throw new Error('参数错误！')
     }
     return await this.sendCmd('init', {
-      deviceName, deviceUuid, deviceWifiName,
-      deviceWifiMac, deviceData,
+      deviceName,
+      deviceUuid,
+      deviceWifiName,
+      deviceWifiMac,
+      deviceData,
     })
   }
 
@@ -206,24 +212,24 @@ class Padchat extends EventEmitter {
         if (!data.token) {
           throw new Error('login data error!')
         }
-        break;
+        break
       case 'phone':
-        if (!data.phone) { // code
+        if (!data.phone) {
+          // code
           throw new Error('login data error!')
         }
-        break;
+        break
       case 'user':
         if (!data.username || !data.password) {
           throw new Error('login data error!')
         }
-        break;
+        break
       default:
-        break;
+        break
     }
     data.loginType = loginType[type]
     return await this.sendCmd('login', data)
   }
-
 
   /**
    * 获取设备参数（含加密的62数据）
@@ -262,8 +268,7 @@ class Padchat extends EventEmitter {
    * @memberof Padchat
    */
   async logout() {
-    return await this.sendCmd('logout', {
-    })
+    return await this.sendCmd('logout', {})
   }
 
   /**
@@ -293,7 +298,8 @@ class Padchat extends EventEmitter {
    */
   async sendAppMsg(toUserName, content) {
     return await this.sendCmd('sendAppMsg', {
-      toUserName, content,
+      toUserName,
+      content,
     })
   }
 
@@ -308,7 +314,9 @@ class Padchat extends EventEmitter {
    */
   async shareCard(toUserName, content, userId) {
     return await this.sendCmd('shareCard', {
-      toUserName, content, userId,
+      toUserName,
+      content,
+      userId,
     })
   }
 
@@ -325,7 +333,8 @@ class Padchat extends EventEmitter {
       image = image.toString('base64')
     }
     return await this.sendCmd('sendImage', {
-      toUserName, image,
+      toUserName,
+      image,
     })
   }
 
@@ -365,7 +374,8 @@ class Padchat extends EventEmitter {
    */
   async addRoomMember(groupId, userId) {
     return await this.sendCmd('addRoomMember', {
-      groupId, userId,
+      groupId,
+      userId,
     })
   }
 
@@ -379,7 +389,8 @@ class Padchat extends EventEmitter {
    */
   async inviteRoomMember(groupId, userId) {
     return await this.sendCmd('inviteRoomMember', {
-      groupId, userId,
+      groupId,
+      userId,
     })
   }
 
@@ -393,7 +404,8 @@ class Padchat extends EventEmitter {
    */
   async deleteRoomMember(groupId, userId) {
     return await this.sendCmd('deleteRoomMember', {
-      groupId, userId,
+      groupId,
+      userId,
     })
   }
 
@@ -537,13 +549,13 @@ class Padchat extends EventEmitter {
   /**
    * 获取消息原始图片
    *
-   * @param {Object} rawMsg 推送的消息结构体
+   * @param {Object} rawMsgData 推送的消息结构体
    * @returns {Promise} 返回Promise<Object>，注意捕捉catch
    * @memberof Padchat
    */
-  async getMsgImage(rawMsg) {
+  async getMsgImage(rawMsgData) {
     return await this.sendCmd('getMsgImage', {
-      rawMsg,
+      rawMsgData,
     })
   }
 
@@ -651,7 +663,6 @@ class Padchat extends EventEmitter {
       content,
     })
   }
-
 
   /** 收藏系列接口 */
 
@@ -773,54 +784,54 @@ class Padchat extends EventEmitter {
   /**
    * 查看转账消息
    *
-   * @param {Object} rawMsg 推送的消息结构体
+   * @param {Object} rawMsgData 推送的消息结构体
    * @returns {Promise} 返回Promise<Object>，注意捕捉catch
    * @memberof Padchat
    */
-  async queryTransfer(rawMsg) {
+  async queryTransfer(rawMsgData) {
     return await this.sendCmd('queryTransfer', {
-      rawMsg,
+      rawMsgData,
     })
   }
 
   /**
    * 接受转账
    *
-   * @param {Object} rawMsg 推送的消息结构体
+   * @param {Object} rawMsgData 推送的消息结构体
    * @returns {Promise} 返回Promise<Object>，注意捕捉catch
    * @memberof Padchat
    */
-  async acceptTransfer(rawMsg) {
+  async acceptTransfer(rawMsgData) {
     return await this.sendCmd('acceptTransfer', {
-      rawMsg,
+      rawMsgData,
     })
   }
 
   /**
    * 接收红包
    *
-   * @param {Object} rawMsg 推送的消息结构体
+   * @param {Object} rawMsgData 推送的消息结构体
    * @returns {Promise} 返回Promise<Object>，注意捕捉catch
    * @memberof Padchat
    */
-  async receiveRedPacket(rawMsg) {
+  async receiveRedPacket(rawMsgData) {
     return await this.sendCmd('receiveRedPacket', {
-      rawMsg,
+      rawMsgData,
     })
   }
 
   /**
    * 查看红包信息
    *
-   * @param {Object} rawMsg 推送的消息结构体
+   * @param {Object} rawMsgData 推送的消息结构体
    * @param {Number} [index=0] 列表索引。
    * 每页11个，查看第二页11，查看第三页22，以此类推
    * @returns {Promise} 返回Promise<Object>，注意捕捉catch
    * @memberof Padchat
    */
-  async queryRedPacket(rawMsg, index = 0) {
+  async queryRedPacket(rawMsgData, index = 0) {
     return await this.sendCmd('queryRedPacket', {
-      rawMsg,
+      rawMsgData,
       index,
     })
   }
@@ -828,14 +839,14 @@ class Padchat extends EventEmitter {
   /**
    * 领取红包
    *
-   * @param {Object} rawMsg 推送的消息结构体
+   * @param {Object} rawMsgData 推送的消息结构体
    * @param {String} key 红包的验证key，通过调用 receiveRedPacket 获得
    * @returns {Promise} 返回Promise<Object>，注意捕捉catch
    * @memberof Padchat
    */
-  async openRedPacket(rawMsg, key) {
+  async openRedPacket(rawMsgData, key) {
     return await this.sendCmd('openRedPacket', {
-      rawMsg,
+      rawMsgData,
       key,
     })
   }
