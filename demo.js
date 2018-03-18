@@ -36,7 +36,7 @@ const logger = log4js.getLogger('app')
 
 logger.info('demo start!')
 
-const deviceInfo = {
+var deviceInfo = {
   deviceName: '',
   deviceUuid: '',
   deviceWifiName: '',
@@ -59,7 +59,8 @@ try {
   autoData.token = data.token
   logger.info('载入设备参数: %o \n\n自动登陆数据：%o ', deviceInfo, autoData)
 } catch (e) {
-  logger.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！')
+  logger.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！现已用随机生成')
+  deviceInfo = Padchat.getRandomDevice()
 }
 
 const wx = new Padchat(key, name, {
