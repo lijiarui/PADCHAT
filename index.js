@@ -162,7 +162,7 @@ class Padchat extends EventEmitter {
       deviceData,
     } = data
     if (!deviceName || !deviceUuid || !deviceWifiName || !deviceWifiMac) {
-      throw new Error('参数错误！')
+      throw new Error('参数错误！deviceInfo的任意参数不能为空')
     }
     return await this.sendCmd('init', {
       deviceName,

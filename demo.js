@@ -1,5 +1,7 @@
 'use strict'
 
+// Javscript EMCAScript 6
+
 const log4js = require('log4js')
 const Padchat = require('./index')
 const fs = require('fs')
@@ -36,7 +38,7 @@ const logger = log4js.getLogger('app')
 
 logger.info('demo start!')
 
-const deviceInfo = {
+let deviceInfo = {
   deviceName: '',
   deviceUuid: '',
   deviceWifiName: '',
@@ -59,7 +61,8 @@ try {
   autoData.token = data.token
   logger.info('载入设备参数: %o \n\n自动登陆数据：%o ', deviceInfo, autoData)
 } catch (e) {
-  logger.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！')
+  logger.warn('没有在本地发现设备登录参数或解析数据失败！如首次登录请忽略！现已用随机生成')
+  deviceInfo = Padchat.getRandomDevice()
 }
 
 const wx = new Padchat(key, name, {
@@ -211,7 +214,6 @@ wx
     // --------------------------------
     // 注意，如果是来自微信群的消息，data.content字段中包含发言人的wxid及其发言内容，需要自行提取
     // 各类复杂消息，data.content中是xml格式的文本内容，需要自行从中提取各类数据。（如好友请求）
-    let ret
 
     switch (data.msgType) {
       case 2:
